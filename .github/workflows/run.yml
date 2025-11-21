@@ -1,0 +1,47 @@
+name: Build and Run Java (generate output.txt)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Compile Main.java
+      run: javac Main.java
+
+    - name: Run program and write output.txt
+      run: java Main < input.json > output.txt
+
+    - name: Show output (Actions log)
+      run: |
+        echo "------ program output (below) ------"
+        cat output.txt
+        echo "------ end of output ------"
+
+    - name: Commit output.txt back to repo
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add output.txt || true
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Add generated output.txt"
+          git push
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
